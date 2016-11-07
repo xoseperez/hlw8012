@@ -53,7 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Maximum pulse with, if longer than this a 0 value is returned
 // This effectively limits the precission of the measurements
-#define PULSE_TIMEOUT       10000
+#define PULSE_TIMEOUT       2000
 
 // Switch from voltage to current and back every this many interrupts on CF1
 // This value is purely experimental, this is quite limitant since when low
@@ -70,21 +70,23 @@ class HLW8012 {
         void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false);
         void handle(unsigned long interval = READING_INTERVAL);
 
-        double getRMSCurrent();
-        unsigned int getRMSVoltage();
-        unsigned int getRMSPower();
+        double getCurrent();
+        unsigned int getVoltage();
+        unsigned int getActivePower();
+        unsigned int getApparentPower();
+        double getPowerFactor();
 
-        void expectedRMSCurrent(double current);
-        void expectedRMSVoltage(unsigned int current);
-        void expectedRMSPower(unsigned int power);
+        void expectedCurrent(double current);
+        void expectedVoltage(unsigned int current);
+        void expectedActivePower(unsigned int power);
 
-        double getCurrentFactor() { return _current_factor; };
-        double getVoltageFactor() { return _voltage_factor; };
-        double getPowerFactor() { return _power_factor; };
+        double getCurrentMultiplier() { return _current_multiplier; };
+        double getVoltageMultiplier() { return _voltage_multiplier; };
+        double getPowerMultiplier() { return _power_multiplier; };
 
-        void setCurrentFactor(double current_factor) { _current_factor = current_factor; };
-        void setVoltageFactor(double voltage_factor) { _voltage_factor = voltage_factor; };
-        void setPowerFactor(double power_factor) { _power_factor = power_factor; };
+        void setCurrentMultiplier(double current_multiplier) { _current_multiplier = current_multiplier; };
+        void setVoltageMultiplier(double voltage_multiplier) { _voltage_multiplier = voltage_multiplier; };
+        void setPowerMultiplier(double power_multiplier) { _power_multiplier = power_multiplier; };
 
     private:
 
@@ -92,9 +94,9 @@ class HLW8012 {
         unsigned char _cf1_pin;
         unsigned char _sel_pin;
 
-        double _current_factor = X_CURRENT;
-        double _voltage_factor = X_VOLTAGE;
-        double _power_factor = X_POWER;
+        double _current_multiplier = X_CURRENT;
+        double _voltage_multiplier = X_VOLTAGE;
+        double _power_multiplier = X_POWER;
 
         unsigned long _voltage_pulse_width = 0;
         unsigned long _current_pulse_width = 0;

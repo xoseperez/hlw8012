@@ -65,46 +65,60 @@ void HLW8012::handle(unsigned long interval) {
 
 }
 
-double HLW8012::getRMSCurrent() {
+double HLW8012::getCurrent() {
     if (_power == 0) {
         _current = 0;
     } else {
         if (_use_interrupts) _checkCF1Signal();
-        _current = (_current_pulse_width > 0) ? _current_factor / _current_pulse_width : 0;
+        _current = (_current_pulse_width > 0) ? _current_multiplier / _current_pulse_width : 0;
     }
     return _current;
 }
 
-unsigned int HLW8012::getRMSVoltage() {
+unsigned int HLW8012::getVoltage() {
     if (_use_interrupts) _checkCF1Signal();
-    _voltage = (_voltage_pulse_width > 0) ? _voltage_factor / _voltage_pulse_width : 0;
+    _voltage = (_voltage_pulse_width > 0) ? _voltage_multiplier / _voltage_pulse_width : 0;
     return _voltage;
 }
 
-unsigned int HLW8012::getRMSPower() {
+unsigned int HLW8012::getActivePower() {
     if (_use_interrupts) {
         _checkCFSignal();
     } else {
         _power_pulse_width = 2 * pulseIn(_cf_pin, HIGH);
     }
-    _power = (_power_pulse_width > 0) ? _power_factor / _power_pulse_width : 0;
+    _power = (_power_pulse_width > 0) ? _power_multiplier / _power_pulse_width : 0;
     _cf_interrupt_count = 0;
     return _power;
 }
 
-void HLW8012::expectedRMSCurrent(double value) {
-    if (_current == 0) getRMSCurrent();
-    if (_current > 0) _current_factor *= (value / _current);
+unsigned int HLW8012::getApparentPower() {
+    double current = getCurrent();
+    unsigned int voltage = getVoltage();
+    return voltage * current;
 }
 
-void HLW8012::expectedRMSVoltage(unsigned int value) {
-    if (_voltage == 0) getRMSVoltage();
-    if (_voltage > 0) _voltage_factor *= ((double) value / _voltage);
+double HLW8012::getPowerFactor() {
+    unsigned int active = getActivePower();
+    unsigned int apparent = getApparentPower();
+    if (active > apparent) return 1;
+    if (apparent == 0) return 0;
+    return (double) active / apparent;
 }
 
-void HLW8012::expectedRMSPower(unsigned int value) {
-    if (_power == 0) getRMSPower();
-    if (_power > 0) _power_factor *= ((double) value / _power);
+void HLW8012::expectedCurrent(double value) {
+    if (_current == 0) getCurrent();
+    if (_current > 0) _current_multiplier *= (value / _current);
+}
+
+void HLW8012::expectedVoltage(unsigned int value) {
+    if (_voltage == 0) getVoltage();
+    if (_voltage > 0) _voltage_multiplier *= ((double) value / _voltage);
+}
+
+void HLW8012::expectedActivePower(unsigned int value) {
+    if (_power == 0) getActivePower();
+    if (_power > 0) _power_multiplier *= ((double) value / _power);
 }
 
 void HLW8012::cf_interrupt() {
@@ -124,8 +138,6 @@ void HLW8012::cf1_interrupt() {
     _last_cf1_interrupt = now;
     _cf1_interrupt_count++;
     if ((_cf1_interrupt_count % CF1_SWITCH_COUNT) == 0) {
-
-        pulse_width *= 2;
 
         if (_mode == _current_mode) {
             _current_pulse_width = pulse_width;

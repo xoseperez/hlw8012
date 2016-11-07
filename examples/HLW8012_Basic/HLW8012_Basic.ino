@@ -37,10 +37,8 @@ HLW8012 hlw8012;
     }
 
     void setInterrupts() {
-        // Trigger on both edges to increase sampling rate
-        // Outputs are 50% duty cycle
-        attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, CHANGE);
-        attachInterrupt(CF_PIN, hlw8012_cf_interrupt, CHANGE);
+        attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, FALLING);
+        attachInterrupt(CF_PIN, hlw8012_cf_interrupt, FALLING);
     }
 
 #endif
@@ -57,14 +55,14 @@ void calibrate() {
     }
 
     // Calibrate using a 60W bulb (pure resistive) on a 230V line
-    hlw8012.expectedRMSPower(60.0);
-    hlw8012.expectedRMSVoltage(230.0);
-    hlw8012.expectedRMSCurrent(60.0 / 230.0);
+    hlw8012.expectedActivePower(60.0);
+    hlw8012.expectedVoltage(230.0);
+    hlw8012.expectedCurrent(60.0 / 230.0);
 
     // Show corrected factors
-    Serial.print("[HLW] New current factor "); Serial.println(hlw8012.getCurrentFactor());
-    Serial.print("[HLW] New voltage factor "); Serial.println(hlw8012.getVoltageFactor());
-    Serial.print("[HLW] New power factor "); Serial.println(hlw8012.getPowerFactor());
+    Serial.print("[HLW] New current multiplier : "); Serial.println(hlw8012.getCurrentMultiplier());
+    Serial.print("[HLW] New voltage multiplier : "); Serial.println(hlw8012.getVoltageMultiplier());
+    Serial.print("[HLW] New power multiplier   : "); Serial.println(hlw8012.getPowerMultiplier());
     Serial.println();
 
 }
@@ -91,13 +89,13 @@ void setup() {
         setInterrupts();
     #endif
 
-    // Show default (as per datasheet) factors
-    Serial.print("[HLW] Default current factor "); Serial.println(hlw8012.getCurrentFactor());
-    Serial.print("[HLW] Default voltage factor "); Serial.println(hlw8012.getVoltageFactor());
-    Serial.print("[HLW] Default power factor "); Serial.println(hlw8012.getPowerFactor());
+    // Show default (as per datasheet) multipliers
+    Serial.print("[HLW] Default current multiplier : "); Serial.println(hlw8012.getCurrentMultiplier());
+    Serial.print("[HLW] Default voltage multiplier : "); Serial.println(hlw8012.getVoltageMultiplier());
+    Serial.print("[HLW] Default power multiplier   : "); Serial.println(hlw8012.getPowerMultiplier());
     Serial.println();
 
-    calibrate();
+    //calibrate();
 
 }
 
@@ -105,7 +103,7 @@ void loop() {
 
     static unsigned long last = millis();
 
-    // When not using interrupts you have to call hlw.handle() every so often with an optional
+    // When not using interrupts you have to call handle() every so often with an optional
     // interval value. This interval defaults to 3000ms but should not be less than 500ms. After this
     // time the code will switch from voltage to current monitor and viceversa. So you will have
     // new values for both after 2x this interval time.
@@ -118,9 +116,11 @@ void loop() {
     if ((millis() - last) > UPDATE_TIME) {
 
         last = millis();
-        Serial.print("[HLW] Power (W)  : "); Serial.println(hlw8012.getRMSPower());
-        Serial.print("[HLW] Current (A): "); Serial.println(hlw8012.getRMSCurrent());
-        Serial.print("[HLW] Voltage (V): "); Serial.println(hlw8012.getRMSVoltage());
+        Serial.print("[HLW] Voltage (V)         : "); Serial.println(hlw8012.getVoltage());
+        Serial.print("[HLW] Current (A)         : "); Serial.println(hlw8012.getCurrent());
+        Serial.print("[HLW] Active Power (W)    : "); Serial.println(hlw8012.getActivePower());
+        Serial.print("[HLW] Apparent Power (VA) : "); Serial.println(hlw8012.getApparentPower());
+        Serial.print("[HLW] Power Factor (%)    : "); Serial.println((int) (100 * hlw8012.getPowerFactor()));
         Serial.println();
 
     }

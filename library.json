@@ -1,0 +1,19 @@
+{
+  "name": "HLW8012",
+  "keywords": "hlw8012 power current voltage",
+  "description": "HLW8012 library for Arduino and ESP8266",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://bitbucket.org/xoseperez/hlw8012.git"
+  },
+  "exclude": "tests",
+  "frameworks": "arduino",
+  "platforms": "*",
+  "authors":
+  {
+    "name": "Xose Perez",
+    "url": "https://bitbucket.org/xoseperez",
+    "maintainer": true
+  }
+}

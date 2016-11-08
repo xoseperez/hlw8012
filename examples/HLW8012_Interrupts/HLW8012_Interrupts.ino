@@ -25,12 +25,26 @@
 
 HLW8012 hlw8012;
 
+// When using interrupts we have to call the library entry point
+// whenever an interrupt is triggered
+void hlw8012_cf1_interrupt() {
+    hlw8012.cf1_interrupt();
+}
+void hlw8012_cf_interrupt() {
+    hlw8012.cf_interrupt();
+}
+
+// Library expects an interrupt on both edges
+void setInterrupts() {
+    attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, CHANGE);
+    attachInterrupt(CF_PIN, hlw8012_cf_interrupt, CHANGE);
+}
+
 void calibrate() {
 
     // Let some time to register values
     unsigned long timeout = millis();
     while ((millis() - timeout) < 10000) {
-        hlw8012.handle();
         delay(1);
     }
 
@@ -62,8 +76,8 @@ void setup() {
     // void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false);
     // * cf_pin, cf1_pin and sel_pin are GPIOs to the HLW8012 IC
     // * currentWhen is the value in sel_pin to select current sampling
-    // * set use_interrupts to false, we will have to call handle() in the main loop to do the sampling
-    hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false);
+    // * set use_interrupts to true to use interrupts to monitor pulse widths
+    hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, true);
 
     // These values are used to calculate current, voltage and power factors as per datasheet formula
     // These are the nominal values for the Sonoff POW resistors:
@@ -78,6 +92,7 @@ void setup() {
     Serial.print("[HLW] Default power multiplier   : "); Serial.println(hlw8012.getPowerMultiplier());
     Serial.println();
 
+    setInterrupts();
     calibrate();
 
 }
@@ -86,14 +101,7 @@ void loop() {
 
     static unsigned long last = millis();
 
-    // When not using interrupts you have to call handle() every so often with an optional
-    // interval value. This interval defaults to 3000ms but should not be less than 500ms. After this
-    // time the code will switch from voltage to current monitor and viceversa. So you will have
-    // new values for both after 2x this interval time.
-    hlw8012.handle(500);
-
-    // This UPDATE_TIME should be at least twice the previous time in handle() when not using interrupts
-    // or 1000ms when using interrupts
+    // This UPDATE_TIME should be at least twice the interrupt timeout (2 second by default)
     if ((millis() - last) > UPDATE_TIME) {
 
         last = millis();

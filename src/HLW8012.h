@@ -43,14 +43,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define READING_INTERVAL    3000
 
 // Maximum pulse with in microseconds
-// if longer than this pulse width is reset to 0
-// This effectively limits the precission of the measurements
+// If longer than this pulse width is reset to 0
+// This value is purely experimental.
+// Higher values allow for a better precission but reduce sampling rate
+// and response speed to change
+// Lower values increase sampling rate but reduce precission
+// Values below 0.5s are not recommended since current and voltage output
+// will have no time to stabilise
 #define PULSE_TIMEOUT       2000000
-
-// Switch from voltage to current and back every this many interrupts on CF1
-// This value is purely experimental, this is quite limitant since when low
-// currents it stays for several seconds sampling the current...
-#define CF1_SWITCH_COUNT    200
 
 class HLW8012 {
 
@@ -59,7 +59,13 @@ class HLW8012 {
         void cf_interrupt();
         void cf1_interrupt();
 
-        void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false);
+        void begin(
+            unsigned char cf_pin,
+            unsigned char cf1_pin,
+            unsigned char sel_pin,
+            unsigned char currentWhen = HIGH,
+            bool use_interrupts = false,
+            unsigned long pulse_timeout = PULSE_TIMEOUT);
         void handle(unsigned long interval = READING_INTERVAL);
 
         double getCurrent();
@@ -95,6 +101,7 @@ class HLW8012 {
         double _voltage_multiplier;
         double _power_multiplier;
 
+        unsigned long _pulse_timeout = PULSE_TIMEOUT;
         unsigned long _voltage_pulse_width = 0;
         unsigned long _current_pulse_width = 0;
         unsigned long _power_pulse_width = 0;
@@ -107,10 +114,9 @@ class HLW8012 {
         unsigned char _mode;
 
         bool _use_interrupts;
-        volatile unsigned long _last_cf_interrupt;
-        volatile unsigned long _last_cf1_interrupt;
-        //volatile unsigned long _cf_interrupt_count = 0;
-        volatile unsigned long _cf1_interrupt_count = 0;
+        volatile unsigned long _last_cf_interrupt = 0;
+        volatile unsigned long _last_cf1_interrupt = 0;
+        volatile unsigned long _first_cf1_interrupt = 0;
 
         void _checkCFSignal();
         void _checkCF1Signal();

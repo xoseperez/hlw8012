@@ -22,13 +22,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <Arduino.h>
 #include "HLW8012.h"
 
-void HLW8012::begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen, bool use_interrupts) {
+void HLW8012::begin(
+    unsigned char cf_pin,
+    unsigned char cf1_pin,
+    unsigned char sel_pin,
+    unsigned char currentWhen,
+    bool use_interrupts,
+    unsigned long pulse_timeout
+    ) {
 
     _cf_pin = cf_pin;
     _cf1_pin = cf1_pin;
     _sel_pin = sel_pin;
     _current_mode = currentWhen;
     _use_interrupts = use_interrupts;
+    _pulse_timeout = pulse_timeout;
 
     pinMode(_cf_pin, INPUT_PULLUP);
     pinMode(_cf1_pin, INPUT_PULLUP);
@@ -54,7 +62,7 @@ void HLW8012::handle(unsigned long interval) {
 
         last_reading = millis();
 
-        T = 2 * pulseIn(_cf1_pin, HIGH);
+        T = 2 * pulseIn(_cf1_pin, HIGH, _pulse_timeout);
         if (_mode == _current_mode) {
             _current_pulse_width = T;
         } else {
@@ -68,17 +76,22 @@ void HLW8012::handle(unsigned long interval) {
 }
 
 double HLW8012::getCurrent() {
+
+    // Update active power
+    if (_use_interrupts) getActivePower();
+
     if (_power == 0) {
         _current = 0;
     } else {
         if (_use_interrupts) _checkCF1Signal();
-        _current = (_current_pulse_width > 0) ? _current_multiplier / _current_pulse_width : 0;
+        _current = (_current_pulse_width > 0) ? _current_multiplier / _current_pulse_width / 2 : 0;
     }
     return _current;
 }
 
 unsigned int HLW8012::getVoltage() {
-    _voltage = (_voltage_pulse_width > 0) ? _voltage_multiplier / _voltage_pulse_width : 0;
+    if (_use_interrupts) _checkCF1Signal();
+    _voltage = (_voltage_pulse_width > 0) ? _voltage_multiplier / _voltage_pulse_width / 2 : 0;
     return _voltage;
 }
 
@@ -86,9 +99,9 @@ unsigned int HLW8012::getActivePower() {
     if (_use_interrupts) {
         _checkCFSignal();
     } else {
-        _power_pulse_width = 2 * pulseIn(_cf_pin, HIGH);
+        _power_pulse_width = pulseIn(_cf_pin, HIGH, _pulse_timeout);
     }
-    _power = (_power_pulse_width > 0) ? _power_multiplier / _power_pulse_width : 0;
+    _power = (_power_pulse_width > 0) ? _power_multiplier / _power_pulse_width / 2 : 0;
     return _power;
 }
 
@@ -133,7 +146,7 @@ void HLW8012::cf_interrupt() {
 
     unsigned long now = micros();
 
-    _power_pulse_width = 2 * (now - _last_cf_interrupt);
+    _power_pulse_width = now - _last_cf_interrupt;
     _last_cf_interrupt = now;
 
 }
@@ -141,31 +154,44 @@ void HLW8012::cf_interrupt() {
 void HLW8012::cf1_interrupt() {
 
     unsigned long now = micros();
-    unsigned long pulse_width = now - _last_cf1_interrupt;
+    unsigned long pulse_width;
 
-    _last_cf1_interrupt = now;
-    _cf1_interrupt_count++;
-    if ((_cf1_interrupt_count % CF1_SWITCH_COUNT) == 0) {
+    if ((now - _first_cf1_interrupt) > _pulse_timeout) {
+
+        if (_last_cf1_interrupt == _first_cf1_interrupt) {
+            pulse_width = 0;
+        } else {
+            pulse_width = now - _last_cf1_interrupt;
+        }
 
         if (_mode == _current_mode) {
-            _current_pulse_width = 2 * pulse_width;
+            _current_pulse_width = pulse_width;
         } else {
-            _voltage_pulse_width = 2 * pulse_width;
+            _voltage_pulse_width = pulse_width;
         }
 
         _mode = 1 - _mode;
         digitalWrite(_sel_pin, _mode);
+        _first_cf1_interrupt = now;
 
     }
+
+    _last_cf1_interrupt = now;
 
 }
 
 void HLW8012::_checkCFSignal() {
-    if ((micros() - _last_cf_interrupt) > PULSE_TIMEOUT) _power_pulse_width = 0;
+    if ((micros() - _last_cf_interrupt) > _pulse_timeout) _power_pulse_width = 0;
 }
 
 void HLW8012::_checkCF1Signal() {
-    if ((micros() - _last_cf1_interrupt) > PULSE_TIMEOUT) _current_pulse_width = 0;
+    if ((micros() - _last_cf1_interrupt) > _pulse_timeout) {
+        if (_mode == _current_mode) {
+            _current_pulse_width = 0;
+        } else {
+            _voltage_pulse_width = 0;
+        }
+    }
 }
 
 // These are the multipliers for current, voltage and power as per datasheet

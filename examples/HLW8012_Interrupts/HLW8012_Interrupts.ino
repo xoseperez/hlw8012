@@ -73,10 +73,11 @@ void setup() {
     digitalWrite(RELAY_PIN, HIGH);
 
     // Initialize HLW8012
-    // void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false);
+    // void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false, unsigned long pulse_timeout = PULSE_TIMEOUT);
     // * cf_pin, cf1_pin and sel_pin are GPIOs to the HLW8012 IC
     // * currentWhen is the value in sel_pin to select current sampling
     // * set use_interrupts to true to use interrupts to monitor pulse widths
+    // * leave pulse_timeout to the default value, recommended when using interrupts
     hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, true);
 
     // These values are used to calculate current, voltage and power factors as per datasheet formula
@@ -107,8 +108,8 @@ void loop() {
         last = millis();
         Serial.print("[HLW] Voltage (V)         : "); Serial.println(hlw8012.getVoltage());
         Serial.print("[HLW] Current (A)         : "); Serial.println(hlw8012.getCurrent());
-        Serial.print("[HLW] Active Power (W)    : "); Serial.println(hlw8012.getActivePower());
         Serial.print("[HLW] Apparent Power (VA) : "); Serial.println(hlw8012.getApparentPower());
+        Serial.print("[HLW] Active Power (W)    : "); Serial.println(hlw8012.getActivePower());
         Serial.print("[HLW] Power Factor (%)    : "); Serial.println((int) (100 * hlw8012.getPowerFactor()));
         Serial.println();
 

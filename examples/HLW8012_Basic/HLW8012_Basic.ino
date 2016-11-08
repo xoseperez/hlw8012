@@ -59,11 +59,12 @@ void setup() {
     digitalWrite(RELAY_PIN, HIGH);
 
     // Initialize HLW8012
-    // void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false);
+    // void begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char sel_pin, unsigned char currentWhen = HIGH, bool use_interrupts = false, unsigned long pulse_timeout = PULSE_TIMEOUT);
     // * cf_pin, cf1_pin and sel_pin are GPIOs to the HLW8012 IC
     // * currentWhen is the value in sel_pin to select current sampling
     // * set use_interrupts to false, we will have to call handle() in the main loop to do the sampling
-    hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false);
+    // * set pulse_timeout to 200ms for a fast response but losing precision (that's ~60W precision :( )
+    hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, false, 200000);
 
     // These values are used to calculate current, voltage and power factors as per datasheet formula
     // These are the nominal values for the Sonoff POW resistors:

@@ -30,35 +30,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // The factor of a 1mOhm resistor
 // as per recomended circuit in datasheet
 // A 1mOhm resistor allows a ~30A max measurement
-#define R_CURRENT           1000
+#define R_CURRENT           0.001
 
-// This is the factor of a voltage divider of 5x 470K upstream and 1k downstream
+// This is the factor of a voltage divider of 6x 470K upstream and 1k downstream
 // as per recomended circuit in datasheet
-#define R_VOLTAGE           2351
+#define R_VOLTAGE           2821
 
 // Frequency of the HLW8012 internal clock
 #define F_OSC               3579000
 
-// These are the multipliers for current, voltage and power as per datasheet
-// These values divided by output period (in useconds) give the actual value
-// For power a frequency of 1Hz means around 10W
-// For current a frequency of 1Hz means around 15mA
-// For voltage a frequency of 1Hz means around 0.41V
-#define X_CURRENT           ( 1000000.0 * 512 * V_REF * R_CURRENT / 24.0 / F_OSC )
-#define X_VOLTAGE           ( 1000000.0 * 512 * V_REF * R_VOLTAGE / 2.0 / F_OSC )
-#define X_POWER             ( 1000000.0 * 128 * V_REF * V_REF * R_VOLTAGE * R_CURRENT / 48.0 / F_OSC )
-
 // Minimum delay between selecting a mode and reading a sample
 #define READING_INTERVAL    3000
 
-// Maximum pulse with, if longer than this a 0 value is returned
+// Maximum pulse with in microseconds
+// if longer than this pulse width is reset to 0
 // This effectively limits the precission of the measurements
-#define PULSE_TIMEOUT       2000
+#define PULSE_TIMEOUT       2000000
 
 // Switch from voltage to current and back every this many interrupts on CF1
 // This value is purely experimental, this is quite limitant since when low
 // currents it stays for several seconds sampling the current...
-#define CF1_SWITCH_COUNT    100
+#define CF1_SWITCH_COUNT    200
 
 class HLW8012 {
 
@@ -75,6 +67,8 @@ class HLW8012 {
         unsigned int getActivePower();
         unsigned int getApparentPower();
         double getPowerFactor();
+
+        void setResistors(double current, double voltage_upstream, double voltage_downstream);
 
         void expectedCurrent(double current);
         void expectedVoltage(unsigned int current);
@@ -94,9 +88,12 @@ class HLW8012 {
         unsigned char _cf1_pin;
         unsigned char _sel_pin;
 
-        double _current_multiplier = X_CURRENT;
-        double _voltage_multiplier = X_VOLTAGE;
-        double _power_multiplier = X_POWER;
+        double _current_resistor = R_CURRENT;
+        double _voltage_resistor = R_VOLTAGE;
+
+        double _current_multiplier;
+        double _voltage_multiplier;
+        double _power_multiplier;
 
         unsigned long _voltage_pulse_width = 0;
         unsigned long _current_pulse_width = 0;
@@ -112,11 +109,12 @@ class HLW8012 {
         bool _use_interrupts;
         volatile unsigned long _last_cf_interrupt;
         volatile unsigned long _last_cf1_interrupt;
-        volatile unsigned long _cf_interrupt_count = 0;
+        //volatile unsigned long _cf_interrupt_count = 0;
         volatile unsigned long _cf1_interrupt_count = 0;
 
         void _checkCFSignal();
         void _checkCF1Signal();
+        void _calculateDefaultMultipliers();
 
 };
 

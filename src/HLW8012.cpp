@@ -34,6 +34,8 @@ void HLW8012::begin(unsigned char cf_pin, unsigned char cf1_pin, unsigned char s
     pinMode(_cf1_pin, INPUT_PULLUP);
     pinMode(_sel_pin, OUTPUT);
 
+    _calculateDefaultMultipliers();
+
     _mode = _current_mode;
     digitalWrite(_sel_pin, _mode);
 
@@ -76,7 +78,6 @@ double HLW8012::getCurrent() {
 }
 
 unsigned int HLW8012::getVoltage() {
-    if (_use_interrupts) _checkCF1Signal();
     _voltage = (_voltage_pulse_width > 0) ? _voltage_multiplier / _voltage_pulse_width : 0;
     return _voltage;
 }
@@ -88,7 +89,6 @@ unsigned int HLW8012::getActivePower() {
         _power_pulse_width = 2 * pulseIn(_cf_pin, HIGH);
     }
     _power = (_power_pulse_width > 0) ? _power_multiplier / _power_pulse_width : 0;
-    _cf_interrupt_count = 0;
     return _power;
 }
 
@@ -121,12 +121,20 @@ void HLW8012::expectedActivePower(unsigned int value) {
     if (_power > 0) _power_multiplier *= ((double) value / _power);
 }
 
+void HLW8012::setResistors(double current, double voltage_upstream, double voltage_downstream) {
+    if (voltage_downstream > 0) {
+        _current_resistor = current;
+        _voltage_resistor = (voltage_upstream + voltage_downstream) / voltage_downstream;
+        _calculateDefaultMultipliers();
+    }
+}
+
 void HLW8012::cf_interrupt() {
 
     unsigned long now = micros();
-    _power_pulse_width = now - _last_cf_interrupt;
+
+    _power_pulse_width = 2 * (now - _last_cf_interrupt);
     _last_cf_interrupt = now;
-    _cf_interrupt_count++;
 
 }
 
@@ -140,9 +148,9 @@ void HLW8012::cf1_interrupt() {
     if ((_cf1_interrupt_count % CF1_SWITCH_COUNT) == 0) {
 
         if (_mode == _current_mode) {
-            _current_pulse_width = pulse_width;
+            _current_pulse_width = 2 * pulse_width;
         } else {
-            _voltage_pulse_width = pulse_width;
+            _voltage_pulse_width = 2 * pulse_width;
         }
 
         _mode = 1 - _mode;
@@ -153,18 +161,20 @@ void HLW8012::cf1_interrupt() {
 }
 
 void HLW8012::_checkCFSignal() {
-    static unsigned long last = millis();
-    if (_cf_interrupt_count == 0) {
-        if ((millis() - last) > PULSE_TIMEOUT) _power_pulse_width = 0;
-    }
-    last = millis();
+    if ((micros() - _last_cf_interrupt) > PULSE_TIMEOUT) _power_pulse_width = 0;
 }
 
 void HLW8012::_checkCF1Signal() {
-    static unsigned long last = millis();
-    static unsigned long last_count = 0;
-    if (_cf1_interrupt_count == last_count) {
-        if ((millis() - last) > PULSE_TIMEOUT) _current_pulse_width = _voltage_pulse_width = 0;
-    }
-    last = millis();
+    if ((micros() - _last_cf1_interrupt) > PULSE_TIMEOUT) _current_pulse_width = 0;
+}
+
+// These are the multipliers for current, voltage and power as per datasheet
+// These values divided by output period (in useconds) give the actual value
+// For power a frequency of 1Hz means around 12W
+// For current a frequency of 1Hz means around 15mA
+// For voltage a frequency of 1Hz means around 0.5V
+void HLW8012::_calculateDefaultMultipliers() {
+    _current_multiplier = ( 1000000.0 * 512 * V_REF / _current_resistor / 24.0 / F_OSC );
+    _voltage_multiplier = ( 1000000.0 * 512 * V_REF * _voltage_resistor / 2.0 / F_OSC );
+    _power_multiplier = ( 1000000.0 * 128 * V_REF * V_REF * _voltage_resistor / _current_resistor / 48.0 / F_OSC );
 }

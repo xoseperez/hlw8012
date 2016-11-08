@@ -12,14 +12,11 @@ Higher values (of power, current or voltage) mean shorter pulses.
 
 Typical values are:
 
-* A 1Hz pulse on CF pin means around 10W RMS
-* A 100Hz pulse on CF pin means around 1kW RMS
-* A 1Hz pulse on CF1 pin means 15mA or 0.41V RMS depending on the value in SEL pin
-* A 100Hz pulse on CF1 pin means 1.5A or 41V RMS depending on the value in SEL pin
+* A 1Hz pulse on CF pin means around 12W RMS
+* A 1Hz pulse on CF1 pin means 15mA or 0.5V RMS depending on the value in SEL pin
 
 These ratios are per datasheet typical application, but the actual circuitry might be different.
 Even if the circuit matches that on the datasheet the IC tolerances are quite loosy (+-15% for clock frequency, for instance).
-So a manual calibration is necessary.
 
 ## Features
 
@@ -27,11 +24,12 @@ The main features of the HLW8012 library are:
 
 * Two available modes: interrupt-driven or non-interrupt-driven.
 * Default calibration based on product datasheet (3.1 Typical Applications).
+* You can specify the resistor values for your circuit.
 * Optional manual calibration based on expected values.
 
 ## Issues
 
-When using interrupts, values are monitored in the background. When calling the getRMS*** methods the last sampled value is returned, this value might be up to some seconds old if they are very low values. This is specially obvious when switching off the load. The new value of 0W or 0mA is ideally represented by infinite-length pulses. That means that the interrupt is not triggered, the value does not get updated and it will only timeout after 10 seconds (PULSE_TIMEOUT constant in HLW8012.h). During that 10 seconds the library will still return the last non-zero value.
+When using interrupts, values are monitored in the background. When calling the get***() methods the last sampled value is returned, this value might be up to some seconds old if they are very low values. This is specially obvious when switching off the load. The new value of 0W or 0mA is ideally represented by infinite-length pulses. That means that the interrupt is not triggered, the value does not get updated and it will only timeout after 2 seconds (PULSE_TIMEOUT constant in HLW8012.h). During that time lapse the library will still return the last non-zero value.
 
 On the other hand, when not using interrupts, you have to let some time for the pulses in CF1 to stabilize before reading the value. This is the "interval" parameter in the handle() method that defaults to 3 seconds. The longer this value the more stable the readings (in particular for low values), but also decreases the frequency sampling.
 
@@ -42,6 +40,18 @@ I've put together this library after doing a lot of tests with a Sonoff POW[2]. 
 ## Usage
 
 Check the examples for indications on how to use the library.
+
+## Manual calibration
+
+Use a pure resistive load with a well-known power consumption or use a multimeter to monitor it. A bulb is usually a good idea, although a toaster would be better since it's power consumption is higher.
+
+Then use the expected*() methods and feed the values. For instance, for a 60W bulb in a 230 line that would be:
+
+```
+hlw8012.expectedActivePower(60.0);
+hlw8012.expectedVoltage(230.0);
+hlw8012.expectedCurrent(60.0 / 230.0);
+```
 
 
 [1]:https://github.com/esp8266/Arduino

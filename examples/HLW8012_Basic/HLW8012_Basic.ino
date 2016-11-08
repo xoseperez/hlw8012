@@ -1,25 +1,30 @@
 #include <Arduino.h>
 #include "HLW8012.h"
 
-#define SERIAL_BAUDRATE     115200
+#define SERIAL_BAUDRATE                 115200
 
 // GPIOs
-#define RELAY_PIN           12
-#define SEL_PIN             5
-#define CF1_PIN             13
-#define CF_PIN              14
+#define RELAY_PIN                       12
+#define SEL_PIN                         5
+#define CF1_PIN                         13
+#define CF_PIN                          14
 
 // Check values every 10 seconds
-#define UPDATE_TIME         10000
+#define UPDATE_TIME                     10000
 
 // Set SEL_PIN to HIGH to sample current
 // This is the case for Itead's Sonoff POW, where a
 // the SEL_PIN drives a transistor that pulls down
 // the SEL pin in the HLW8012 when closed
-#define CURRENT_MODE        HIGH
+#define CURRENT_MODE                    HIGH
 
 // Use interrupt-driven approach
-#define USE_INTERRUPTS      1
+#define USE_INTERRUPTS                  1
+
+// These are the nominal values for the resistors in the circuit
+#define CURRENT_RESISTOR                0.001
+#define VOLTAGE_RESISTOR_UPSTREAM       ( 5 * 470000 ) // Real: 2280k
+#define VOLTAGE_RESISTOR_DOWNSTREAM     ( 1000 ) // Real 1.009k
 
 HLW8012 hlw8012;
 
@@ -37,8 +42,8 @@ HLW8012 hlw8012;
     }
 
     void setInterrupts() {
-        attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, FALLING);
-        attachInterrupt(CF_PIN, hlw8012_cf_interrupt, FALLING);
+        attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, CHANGE);
+        attachInterrupt(CF_PIN, hlw8012_cf_interrupt, CHANGE);
     }
 
 #endif
@@ -85,6 +90,13 @@ void setup() {
     // * set use_interrupts to true to use interrupts to monitor pulse widths, if false you should call handle() in the main loop to do the sampling
     hlw8012.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, USE_INTERRUPTS);
 
+    // These values are used to calculate current, voltage and power factors as per datasheet formula
+    // These are the nominal values for the Sonoff POW resistors:
+    // * The CURRENT_RESISTOR is the 1milliOhm copper-manganese resistor in series with the main line
+    // * The VOLTAGE_RESISTOR_UPSTREAM are the 5 470kOhm resistors in the voltage divider that feeds the V2P pin in the HLW8012
+    // * The VOLTAGE_RESISTOR_DOWNSTREAM is the 1kOhm resistor in the voltage divider that feeds the V2P pin in the HLW8012
+    hlw8012.setResistors(CURRENT_RESISTOR, VOLTAGE_RESISTOR_UPSTREAM, VOLTAGE_RESISTOR_DOWNSTREAM);
+
     #if USE_INTERRUPTS == 1
         setInterrupts();
     #endif
@@ -95,7 +107,7 @@ void setup() {
     Serial.print("[HLW] Default power multiplier   : "); Serial.println(hlw8012.getPowerMultiplier());
     Serial.println();
 
-    //calibrate();
+    calibrate();
 
 }
 

@@ -50,47 +50,49 @@ void HLW8012::begin(
 
 }
 
-void HLW8012::handle(unsigned long interval) {
-
-    double T;
-    static unsigned long last_reading = millis();
-
-    // Safety check
-    if (_use_interrupts) return;
-
-    if ((millis() - last_reading) > interval) {
-
-        last_reading = millis();
-
-        T = 2 * pulseIn(_cf1_pin, HIGH, _pulse_timeout);
-        if (_mode == _current_mode) {
-            _current_pulse_width = T;
-        } else {
-            _voltage_pulse_width = T;
-        }
-        _mode = 1 - _mode;
-        digitalWrite(_sel_pin, _mode);
-
+void HLW8012::setMode(hlw8012_mode_t mode) {
+    _mode = (mode == MODE_CURRENT) ? _current_mode : 1 - _current_mode;
+    digitalWrite(_sel_pin, _mode);
+    if (_use_interrupts) {
+        _last_cf1_interrupt = _first_cf1_interrupt = micros();
     }
+}
 
+hlw8012_mode_t HLW8012::getMode() {
+    return (_mode == _current_mode) ? MODE_CURRENT : MODE_VOLTAGE;
+}
+
+hlw8012_mode_t HLW8012::toggleMode() {
+    hlw8012_mode_t new_mode = getMode() == MODE_CURRENT ? MODE_VOLTAGE : MODE_CURRENT;
+    setMode(new_mode);
+    return new_mode;
 }
 
 double HLW8012::getCurrent() {
 
-    // Update active power
-    if (_use_interrupts) getActivePower();
-
+    // Power measurements are more sensitive to switch offs,
+    // so we first check if power is 0 to set _current to 0 too
     if (_power == 0) {
-        _current = 0;
-    } else {
-        if (_use_interrupts) _checkCF1Signal();
-        _current = (_current_pulse_width > 0) ? _current_multiplier / _current_pulse_width / 2 : 0;
+        _current_pulse_width = 0;
+
+    } else if (_use_interrupts) {
+        _checkCF1Signal();
+
+    } else if (_mode == _current_mode) {
+        _current_pulse_width = pulseIn(_cf1_pin, HIGH, _pulse_timeout);
     }
+
+    _current = (_current_pulse_width > 0) ? _current_multiplier / _current_pulse_width / 2 : 0;
     return _current;
+
 }
 
 unsigned int HLW8012::getVoltage() {
-    if (_use_interrupts) _checkCF1Signal();
+    if (_use_interrupts) {
+        _checkCF1Signal();
+    } else if (_mode != _current_mode) {
+        _voltage_pulse_width = pulseIn(_cf1_pin, HIGH, _pulse_timeout);
+    }
     _voltage = (_voltage_pulse_width > 0) ? _voltage_multiplier / _voltage_pulse_width / 2 : 0;
     return _voltage;
 }
@@ -191,6 +193,7 @@ void HLW8012::_checkCF1Signal() {
         } else {
             _voltage_pulse_width = 0;
         }
+        toggleMode();
     }
 }
 

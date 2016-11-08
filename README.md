@@ -27,19 +27,23 @@ The main features of the HLW8012 library are:
 * You can specify the resistor values for your circuit.
 * Optional manual calibration based on expected values.
 
-## Notes
-
-When using interrupts, values are monitored in the background. When calling the get***() methods the last sampled value is returned, this value might be up to a few seconds old if they are very low values. This is specially obvious when switching off the load. The new value of 0W or 0mA is ideally represented by infinite-length pulses. That means that the interrupt is not triggered, the value does not get updated and it will only timeout after 2 seconds (configurable through the pulse_timeout parameter in the begin() method). During that time lapse the library will still return the last non-zero value.
-
-On the other hand, when not using interrupts, you have to let some time for the pulses in CF1 to stabilize before reading the value. This is the "interval" parameter in the handle() method that defaults to 3 seconds. The longer this value the more stable the readings (in particular for low values), but also decreases the frequency sampling. Also readings might take up to 2s (same pulse_timeout value before) and impact other processes (like WIFI in ESP8266).
-
-**Interrupts** is the recommended way to go. Use non-interrupt approach and a low pulse_timeout (200ms) only if you are deploying a battery powered device and you care more about your device power consumption than about precission. But then you should know the HLW8012 takes about 15mW...
-
-I've put together this library after doing a lot of tests with a Sonoff POW[2]. The HLW8012 datasheet (in the "docs" folder) gives some information but I couldn't find any about this issue in the CF1 line that requires some time for the pulse length to stabilize (apparently). Any help about that will be very welcome.
-
 ## Usage
 
 Check the examples for indications on how to use the library.
+
+### Interrupt driven mode
+
+When using interrupts, values are monitored in the background. When calling the get***() methods the last sampled value is returned, this value might be up to a few seconds old if they are very low values. This is specially obvious when switching off the load. The new value of 0W or 0mA is ideally represented by infinite-length pulses. That means that the interrupt is not triggered, the value does not get updated and it will only timeout after 2 seconds (configurable through the pulse_timeout parameter in the begin() method). During that time lapse the library will still return the last non-zero value.
+
+### Non interrupt mode
+
+On the other hand, when not using interrupts, you have to let some time for the pulses in CF1 to stabilize before reading the value. So after calling setMode or toggleMode leave 2 seconds minimum before calling the get methods. The get method for the current mode will measure the pulse width and return the corresponding value, the other one will return the cached value (or 0 if none).
+
+Use non-interrupt approach and a low pulse_timeout (200ms) only if you are deploying a battery powered device and you care more about your device power consumption than about precission. But then you should know the HLW8012 takes about 15mW...
+
+### Notes
+
+I've put together this library after doing a lot of tests with a Sonoff POW[2]. The HLW8012 datasheet (in the "docs" folder) gives some information but I couldn't find any about this issue in the CF1 line that requires some time for the pulse length to stabilize (apparently). Any help about that will be very welcome.
 
 ## Manual calibration
 

@@ -52,6 +52,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // will have no time to stabilise
 #define PULSE_TIMEOUT       2000000
 
+// CF1 mode
+typedef enum {
+    MODE_CURRENT,
+    MODE_VOLTAGE
+} hlw8012_mode_t;
+
 class HLW8012 {
 
     public:
@@ -64,9 +70,12 @@ class HLW8012 {
             unsigned char cf1_pin,
             unsigned char sel_pin,
             unsigned char currentWhen = HIGH,
-            bool use_interrupts = false,
+            bool use_interrupts = true,
             unsigned long pulse_timeout = PULSE_TIMEOUT);
-        void handle(unsigned long interval = READING_INTERVAL);
+
+        void setMode(hlw8012_mode_t mode);
+        hlw8012_mode_t getMode();
+        hlw8012_mode_t toggleMode();
 
         double getCurrent();
         unsigned int getVoltage();
@@ -113,7 +122,7 @@ class HLW8012 {
         unsigned char _current_mode = HIGH;
         unsigned char _mode;
 
-        bool _use_interrupts;
+        bool _use_interrupts = true;
         volatile unsigned long _last_cf_interrupt = 0;
         volatile unsigned long _last_cf1_interrupt = 0;
         volatile unsigned long _first_cf1_interrupt = 0;

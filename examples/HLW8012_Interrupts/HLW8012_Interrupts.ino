@@ -106,10 +106,10 @@ void loop() {
     if ((millis() - last) > UPDATE_TIME) {
 
         last = millis();
+        Serial.print("[HLW] Active Power (W)    : "); Serial.println(hlw8012.getActivePower());
         Serial.print("[HLW] Voltage (V)         : "); Serial.println(hlw8012.getVoltage());
         Serial.print("[HLW] Current (A)         : "); Serial.println(hlw8012.getCurrent());
         Serial.print("[HLW] Apparent Power (VA) : "); Serial.println(hlw8012.getApparentPower());
-        Serial.print("[HLW] Active Power (W)    : "); Serial.println(hlw8012.getActivePower());
         Serial.print("[HLW] Power Factor (%)    : "); Serial.println((int) (100 * hlw8012.getPowerFactor()));
         Serial.println();
 

@@ -1,6 +1,6 @@
 /*
 
-HLW8012
+HLW8012 0.1.1
 
 Copyright (C) 2016 by Xose Pérez <xose dot perez at gmail dot com>
 

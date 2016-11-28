@@ -1,6 +1,6 @@
 /*
 
-HLW8012
+HLW8012 0.1.0
 
 Copyright (C) 2016 by Xose Pérez <xose dot perez at gmail dot com>
 
@@ -145,12 +145,9 @@ void HLW8012::setResistors(double current, double voltage_upstream, double volta
 }
 
 void HLW8012::cf_interrupt() {
-
     unsigned long now = micros();
-
     _power_pulse_width = now - _last_cf_interrupt;
     _last_cf_interrupt = now;
-
 }
 
 void HLW8012::cf1_interrupt() {

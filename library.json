@@ -10,7 +10,7 @@
     "license": "GPL-3.0",
     "exclude": "tests",
     "frameworks": "arduino",
-    "platforms": ["atmelavr", "espressif8266"]
+    "platforms": ["atmelavr", "espressif8266"],
     "dependencies": [
     ],
     "authors": {

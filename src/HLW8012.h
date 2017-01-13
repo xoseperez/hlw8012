@@ -1,6 +1,6 @@
 /*
 
-HLW8012 0.1.1
+HLW8012 1.0.0
 
 Copyright (C) 2016 by Xose Pérez <xose dot perez at gmail dot com>
 
@@ -82,6 +82,7 @@ class HLW8012 {
         unsigned int getActivePower();
         unsigned int getApparentPower();
         double getPowerFactor();
+        unsigned int getReactivePower();
 
         void setResistors(double current, double voltage_upstream, double voltage_downstream);
 
@@ -96,6 +97,7 @@ class HLW8012 {
         void setCurrentMultiplier(double current_multiplier) { _current_multiplier = current_multiplier; };
         void setVoltageMultiplier(double voltage_multiplier) { _voltage_multiplier = voltage_multiplier; };
         void setPowerMultiplier(double power_multiplier) { _power_multiplier = power_multiplier; };
+        void resetMultipliers();
 
     private:
 
@@ -111,16 +113,16 @@ class HLW8012 {
         double _power_multiplier;
 
         unsigned long _pulse_timeout = PULSE_TIMEOUT;
-        unsigned long _voltage_pulse_width = 0;
-        unsigned long _current_pulse_width = 0;
-        unsigned long _power_pulse_width = 0;
+        volatile unsigned long _voltage_pulse_width = 0;
+        volatile unsigned long _current_pulse_width = 0;
+        volatile unsigned long _power_pulse_width = 0;
 
         double _current = 0;
         unsigned int _voltage = 0;
         unsigned int _power = 0;
 
         unsigned char _current_mode = HIGH;
-        unsigned char _mode;
+        volatile unsigned char _mode;
 
         bool _use_interrupts = true;
         volatile unsigned long _last_cf_interrupt = 0;

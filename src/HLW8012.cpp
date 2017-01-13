@@ -1,6 +1,6 @@
 /*
 
-HLW8012 0.1.0
+HLW8012 1.0.0
 
 Copyright (C) 2016 by Xose Pérez <xose dot perez at gmail dot com>
 
@@ -113,6 +113,16 @@ unsigned int HLW8012::getApparentPower() {
     return voltage * current;
 }
 
+unsigned int HLW8012::getReactivePower() {
+    unsigned int active = getActivePower();
+    unsigned int apparent = getApparentPower();
+    if (apparent > active) {
+        return sqrt(apparent * apparent - active * active);
+    } else {
+        return 0;
+    }
+}
+
 double HLW8012::getPowerFactor() {
     unsigned int active = getActivePower();
     unsigned int apparent = getApparentPower();
@@ -134,6 +144,10 @@ void HLW8012::expectedVoltage(unsigned int value) {
 void HLW8012::expectedActivePower(unsigned int value) {
     if (_power == 0) getActivePower();
     if (_power > 0) _power_multiplier *= ((double) value / _power);
+}
+
+void HLW8012::resetMultipliers() {
+    _calculateDefaultMultipliers();
 }
 
 void HLW8012::setResistors(double current, double voltage_upstream, double voltage_downstream) {

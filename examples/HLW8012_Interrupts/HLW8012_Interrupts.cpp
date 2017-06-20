@@ -94,7 +94,7 @@ void setup() {
     Serial.println();
 
     setInterrupts();
-    calibrate();
+    //calibrate();
 
 }
 

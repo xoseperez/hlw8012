@@ -83,6 +83,8 @@ class HLW8012 {
         unsigned int getApparentPower();
         double getPowerFactor();
         unsigned int getReactivePower();
+        unsigned long getEnergy(); //in Ws
+        void resetEnergy();
 
         void setResistors(double current, double voltage_upstream, double voltage_downstream);
 
@@ -108,14 +110,15 @@ class HLW8012 {
         double _current_resistor = R_CURRENT;
         double _voltage_resistor = R_VOLTAGE;
 
-        double _current_multiplier;
-        double _voltage_multiplier;
-        double _power_multiplier;
+        double _current_multiplier; // Unit: us/A
+        double _voltage_multiplier; // Unit: us/V
+        double _power_multiplier;   // Unit: us/W
 
-        unsigned long _pulse_timeout = PULSE_TIMEOUT;
-        volatile unsigned long _voltage_pulse_width = 0;
-        volatile unsigned long _current_pulse_width = 0;
-        volatile unsigned long _power_pulse_width = 0;
+        unsigned long _pulse_timeout = PULSE_TIMEOUT;    //Unit: us
+        volatile unsigned long _voltage_pulse_width = 0; //Unit: us
+        volatile unsigned long _current_pulse_width = 0; //Unit: us
+        volatile unsigned long _power_pulse_width = 0;   //Unit: us
+        volatile unsigned long _pulse_count = 0;
 
         double _current = 0;
         unsigned int _voltage = 0;

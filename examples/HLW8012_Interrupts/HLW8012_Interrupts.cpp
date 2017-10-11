@@ -112,6 +112,7 @@ void loop() {
         Serial.print("[HLW] Current (A)         : "); Serial.println(hlw8012.getCurrent());
         Serial.print("[HLW] Apparent Power (VA) : "); Serial.println(hlw8012.getApparentPower());
         Serial.print("[HLW] Power Factor (%)    : "); Serial.println((int) (100 * hlw8012.getPowerFactor()));
+        Serial.print("[HLW] Agg. energy (Ws)    : "); Serial.println(hlw8012.getEnergy());
         Serial.println();
 
     }

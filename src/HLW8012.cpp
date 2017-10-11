@@ -131,23 +131,22 @@ double HLW8012::getPowerFactor() {
     return (double) active / apparent;
 }
 
-unsigned long HLW8012::getEnergy()
-{
-    if (!_use_interrupts)
-    {
-        // Counting pulses only works in IRQ mode
-        return 0;
-    }
-    /* Pulse count is directly proportional to energy:
+unsigned long HLW8012::getEnergy() {
+
+    // Counting pulses only works in IRQ mode
+    if (!_use_interrupts) return 0;
+
+    /*
+    Pulse count is directly proportional to energy:
     P = m*f (m=power multiplier, f = Frequency)
     f = N/t (N=pulse count, t = time)
     E = P*t = m*N  (E=energy)
     */
     return _pulse_count * _power_multiplier / 1000000. / 2;
+
 }
 
-void HLW8012::resetEnergy()
-{
+void HLW8012::resetEnergy() {
     _pulse_count = 0;
 }
 

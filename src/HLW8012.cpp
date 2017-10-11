@@ -131,6 +131,26 @@ double HLW8012::getPowerFactor() {
     return (double) active / apparent;
 }
 
+unsigned long HLW8012::getEnergy()
+{
+    if (!_use_interrupts)
+    {
+        // Counting pulses only works in IRQ mode
+        return 0;
+    }
+    /* Pulse count is directly proportional to energy:
+    P = m*f (m=power multiplier, f = Frequency)
+    f = N/t (N=pulse count, t = time)
+    E = P*t = m*N  (E=energy)
+    */
+    return _pulse_count * _power_multiplier / 1000000. / 2;
+}
+
+void HLW8012::resetEnergy()
+{
+    _pulse_count = 0;
+}
+
 void HLW8012::expectedCurrent(double value) {
     if (_current == 0) getCurrent();
     if (_current > 0) _current_multiplier *= (value / _current);
@@ -162,6 +182,7 @@ void ICACHE_RAM_ATTR HLW8012::cf_interrupt() {
     unsigned long now = micros();
     _power_pulse_width = now - _last_cf_interrupt;
     _last_cf_interrupt = now;
+    _pulse_count++;
 }
 
 void ICACHE_RAM_ATTR HLW8012::cf1_interrupt() {

@@ -1,8 +1,8 @@
 /*
 
-HLW8012 1.0.0
+HLW8012
 
-Copyright (C) 2016 by Xose Pérez <xose dot perez at gmail dot com>
+Copyright (C) 2016-2018 by Xose Pérez <xose dot perez at gmail dot com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -51,6 +51,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Values below 0.5s are not recommended since current and voltage output
 // will have no time to stabilise
 #define PULSE_TIMEOUT       2000000
+
+// Define ICACHE_RAM_ATTR for AVR platforms
+#if defined(ARDUINO_ARCH_AVR)
+#define ICACHE_RAM_ATTR     
+#endif
 
 // CF1 mode
 typedef enum {

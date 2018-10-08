@@ -187,10 +187,11 @@ void ICACHE_RAM_ATTR HLW8012::cf_interrupt() {
 void ICACHE_RAM_ATTR HLW8012::cf1_interrupt() {
 
     unsigned long now = micros();
-    unsigned long pulse_width;
 
     if ((now - _first_cf1_interrupt) > _pulse_timeout) {
 
+        unsigned long pulse_width;
+        
         if (_last_cf1_interrupt == _first_cf1_interrupt) {
             pulse_width = 0;
         } else {

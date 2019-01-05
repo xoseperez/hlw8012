@@ -74,7 +74,14 @@ class HLW8012 {
             unsigned char cf_pin,
             unsigned char cf1_pin,
             unsigned char sel_pin,
-            unsigned char currentWhen = HIGH,
+            unsigned char current_level = HIGH,
+            bool use_interrupts = true,
+            unsigned long pulse_timeout = PULSE_TIMEOUT);
+
+        void begin(
+            unsigned char cf_pin,
+            unsigned char cf1_pin,
+            hlw8012_mode_t mode,
             bool use_interrupts = true,
             unsigned long pulse_timeout = PULSE_TIMEOUT);
 
@@ -110,7 +117,7 @@ class HLW8012 {
 
         unsigned char _cf_pin;
         unsigned char _cf1_pin;
-        unsigned char _sel_pin;
+        unsigned char _sel_pin = 0xFF;
 
         double _current_resistor = R_CURRENT;
         double _voltage_resistor = R_VOLTAGE;
@@ -129,8 +136,8 @@ class HLW8012 {
         unsigned int _voltage = 0;
         unsigned int _power = 0;
 
-        unsigned char _current_mode = HIGH;
-        volatile unsigned char _mode;
+        unsigned char _current_level = HIGH;
+        volatile hlw8012_mode_t _mode;
 
         bool _use_interrupts = true;
         volatile unsigned long _last_cf_interrupt = 0;

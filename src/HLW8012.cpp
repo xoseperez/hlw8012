@@ -26,46 +26,68 @@ void HLW8012::begin(
     unsigned char cf_pin,
     unsigned char cf1_pin,
     unsigned char sel_pin,
-    unsigned char currentWhen,
+    unsigned char current_level,
+    bool use_interrupts,
+    unsigned long pulse_timeout
+    ) {
+
+    _current_level = current_level;
+    _sel_pin = sel_pin;
+    pinMode(_sel_pin, OUTPUT);
+    digitalWrite(_sel_pin, _current_level);
+
+    begin(cf_pin, cf1_pin, MODE_CURRENT, use_interrupts, pulse_timeout);
+
+}
+
+void HLW8012::begin(
+    unsigned char cf_pin,
+    unsigned char cf1_pin,
+    hlw8012_mode_t mode,
     bool use_interrupts,
     unsigned long pulse_timeout
     ) {
 
     _cf_pin = cf_pin;
     _cf1_pin = cf1_pin;
-    _sel_pin = sel_pin;
-    _current_mode = currentWhen;
+    _mode = mode;
     _use_interrupts = use_interrupts;
     _pulse_timeout = pulse_timeout;
+    _last_cf1_interrupt = _first_cf1_interrupt = micros();
 
     pinMode(_cf_pin, INPUT_PULLUP);
     pinMode(_cf1_pin, INPUT_PULLUP);
-    pinMode(_sel_pin, OUTPUT);
 
     _calculateDefaultMultipliers();
-
-    _mode = _current_mode;
-    digitalWrite(_sel_pin, _mode);
-
 
 }
 
 void HLW8012::setMode(hlw8012_mode_t mode) {
-    _mode = (mode == MODE_CURRENT) ? _current_mode : 1 - _current_mode;
-    digitalWrite(_sel_pin, _mode);
+
+    if (0xFF == _sel_pin) return;
+    if (mode == _mode) return;
+
+    _mode = mode;
+    bool level = (_mode == MODE_CURRENT) ? _current_level : 1 - _current_level;
+    digitalWrite(_sel_pin, level);
     if (_use_interrupts) {
         _last_cf1_interrupt = _first_cf1_interrupt = micros();
     }
+
 }
 
 hlw8012_mode_t HLW8012::getMode() {
-    return (_mode == _current_mode) ? MODE_CURRENT : MODE_VOLTAGE;
+    return _mode;
 }
 
 hlw8012_mode_t HLW8012::toggleMode() {
-    hlw8012_mode_t new_mode = getMode() == MODE_CURRENT ? MODE_VOLTAGE : MODE_CURRENT;
+    
+    if (0xFF == _sel_pin) return _mode;
+    
+    hlw8012_mode_t new_mode = (getMode() == MODE_CURRENT ? MODE_VOLTAGE : MODE_CURRENT);
     setMode(new_mode);
-    return new_mode;
+    return _mode;
+    
 }
 
 double HLW8012::getCurrent() {
@@ -78,7 +100,7 @@ double HLW8012::getCurrent() {
     } else if (_use_interrupts) {
         _checkCF1Signal();
 
-    } else if (_mode == _current_mode) {
+    } else if (_mode == MODE_CURRENT) {
         _current_pulse_width = pulseIn(_cf1_pin, HIGH, _pulse_timeout);
     }
 
@@ -90,7 +112,7 @@ double HLW8012::getCurrent() {
 unsigned int HLW8012::getVoltage() {
     if (_use_interrupts) {
         _checkCF1Signal();
-    } else if (_mode != _current_mode) {
+    } else if (_mode != MODE_CURRENT) {
         _voltage_pulse_width = pulseIn(_cf1_pin, HIGH, _pulse_timeout);
     }
     _voltage = (_voltage_pulse_width > 0) ? _voltage_multiplier / _voltage_pulse_width / 2 : 0;
@@ -190,23 +212,21 @@ void ICACHE_RAM_ATTR HLW8012::cf1_interrupt() {
 
     if ((now - _first_cf1_interrupt) > _pulse_timeout) {
 
-        unsigned long pulse_width;
+        unsigned long pulse_width = 0;
         
-        if (_last_cf1_interrupt == _first_cf1_interrupt) {
-            pulse_width = 0;
-        } else {
+        if (_last_cf1_interrupt != _first_cf1_interrupt) {
             pulse_width = now - _last_cf1_interrupt;
         }
 
-        if (_mode == _current_mode) {
+        if (_mode == MODE_CURRENT) {
             _current_pulse_width = pulse_width;
         } else {
             _voltage_pulse_width = pulse_width;
         }
 
-        _mode = 1 - _mode;
-        digitalWrite(_sel_pin, _mode);
-        _first_cf1_interrupt = now;
+        if (0xFF != _sel_pin) {
+            toggleMode();
+        }
 
     }
 
@@ -220,7 +240,7 @@ void HLW8012::_checkCFSignal() {
 
 void HLW8012::_checkCF1Signal() {
     if ((micros() - _last_cf1_interrupt) > _pulse_timeout) {
-        if (_mode == _current_mode) {
+        if (_mode == MODE_CURRENT) {
             _current_pulse_width = 0;
         } else {
             _voltage_pulse_width = 0;

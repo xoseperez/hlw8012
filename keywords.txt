@@ -22,12 +22,12 @@ cf_interrupt	KEYWORD2
 cf1_interrupt	KEYWORD2
 
 getCurrent	KEYWORD2
-int getVoltage	KEYWORD2
-int getActivePower	KEYWORD2
-int getApparentPower	KEYWORD2
+getVoltage	KEYWORD2
+getActivePower	KEYWORD2
+getApparentPower	KEYWORD2
 getPowerFactor	KEYWORD2
-int getReactivePower	KEYWORD2
-long getEnergy	KEYWORD2
+getReactivePower	KEYWORD2
+getEnergy	KEYWORD2
 resetEnergy	KEYWORD2
 
 setResistors	KEYWORD2

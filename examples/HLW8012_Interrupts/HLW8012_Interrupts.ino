@@ -36,8 +36,8 @@ void ICACHE_RAM_ATTR hlw8012_cf_interrupt() {
 
 // Library expects an interrupt on both edges
 void setInterrupts() {
-    attachInterrupt(CF1_PIN, hlw8012_cf1_interrupt, CHANGE);
-    attachInterrupt(CF_PIN, hlw8012_cf_interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(CF1_PIN), hlw8012_cf1_interrupt, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(CF_PIN), hlw8012_cf_interrupt, CHANGE);
 }
 
 void calibrate() {

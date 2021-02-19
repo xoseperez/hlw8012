@@ -56,8 +56,8 @@ void setup() {
     hjl01.begin(CF_PIN, CF1_PIN, SEL_PIN, CURRENT_MODE, true);
 
     // Set the interrupts on FALLING
-    attachInterrupt(CF1_PIN, hjl01_cf1_interrupt, FALLING);
-    attachInterrupt(CF_PIN, hjl01_cf_interrupt, FALLING);
+    attachInterrupt(digitalPinToInterrupt(CF1_PIN), hjl01_cf1_interrupt, FALLING);
+    attachInterrupt(digitalPinToInterrupt(CF_PIN), hjl01_cf_interrupt, FALLING);
 
 }
 

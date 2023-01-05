@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.2] 2023-01-05
+### Changed
+- Define ICACHE_RAM_ATTR for all non-Espressif platforms
+
 ## [1.1.1] 2018-10-05
 ### Changed
 - Small changes
